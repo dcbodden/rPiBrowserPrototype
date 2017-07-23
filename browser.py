@@ -18,13 +18,6 @@ GPIO.setup(butPin, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Button pin set as input 
 # add rising edge detection on a channel, ignoring further edges for 200ms for switch bounce handling
 channel = butPin
 
-def my_callback(channel):
-    print('This is a edge event callback function!')
-    print('Edge detected on channel %s'%channel)
-    print('This is run in a different thread to your main program')
-    run_video
-
-GPIO.add_event_detect(channel, GPIO.RISING, callback=my_callback, bouncetime=200)
 
 
 # end GPIO stuff
@@ -109,7 +102,12 @@ def run_video():
     frame = browser.page().mainFrame()
     print frame.evaluateJavaScript('playPause();')
  
-
+def my_callback(channel):
+    print('This is a edge event callback function!')
+    print('Edge detected on channel %s'%channel)
+    print('This is run in a different thread to your main program')
+    run_video
+    
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
@@ -141,6 +139,11 @@ if __name__ == "__main__":
     grid.addWidget(js_eval, 5, 0)
     grid.addWidget(loadButton, 6,0)
     grid.addWidget(playButton, 6,1)
+    
+
+
+    GPIO.add_event_detect(channel, GPIO.RISING, callback=my_callback, bouncetime=200)
+
 
     main_frame = QWidget()
     main_frame.setLayout(grid)

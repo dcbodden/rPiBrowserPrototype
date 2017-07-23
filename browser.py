@@ -1,10 +1,11 @@
 import sys
 
 from PyQt4.QtGui import QApplication, QTableWidget, QTableWidgetItem
-from PyQt4.QtCore import QUrl
+from PyQt4 import QtCore 
 from PyQt4.QtWebKit import QWebView, QWebPage
 from PyQt4.QtGui import QGridLayout, QLineEdit, QWidget, QHeaderView
 from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest
+from PyQt4.Qt import QPushButton
 
 
 class UrlInput(QLineEdit):
@@ -14,7 +15,7 @@ class UrlInput(QLineEdit):
         self.returnPressed.connect(self._return_pressed)
 
     def _return_pressed(self):
-        url = QUrl(self.text())
+        url = QtCore.QUrl(self.text())
         browser.load(url)
 
 
@@ -79,9 +80,13 @@ class Manager(QNetworkAccessManager):
         content_type = headers.get("Content-Type")
         url = reply.url().toString()
         status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
-        status, ok = status.toInt()
-        self.table.update([url, str(status), content_type])
 
+# Interact with the HTML page by calling the completeAndReturnName
+# function; print its return value to the console
+def run_video():
+    frame = browser.page().mainFrame()
+    print frame.evaluateJavaScript('playPause();')
+ 
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -89,7 +94,15 @@ if __name__ == "__main__":
     grid = QGridLayout()
     browser = QWebView()
     url_input = UrlInput(browser)
+    url_input.setText("file:/home/dbodden/development/testHtml5.html")
     requests_table = RequestsTable()
+    loadButton = QPushButton()
+    loadButton.setText("Load Video")
+    loadButton.clicked.connect(url_input._return_pressed)
+    
+    playButton = QPushButton()
+    playButton.setText("Play Video")
+    playButton.clicked.connect(run_video)
 
     manager = Manager(requests_table)
     page = QWebPage()
@@ -104,9 +117,12 @@ if __name__ == "__main__":
     grid.addWidget(browser, 3, 0)
     grid.addWidget(requests_table, 4, 0)
     grid.addWidget(js_eval, 5, 0)
+    grid.addWidget(loadButton, 6,0)
+    grid.addWidget(playButton, 6,1)
 
     main_frame = QWidget()
     main_frame.setLayout(grid)
     main_frame.show()
 
     sys.exit(app.exec_())
+

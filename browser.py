@@ -7,6 +7,28 @@ from PyQt4.QtGui import QGridLayout, QLineEdit, QWidget, QHeaderView
 from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from PyQt4.Qt import QPushButton
 
+# GPIO stuff
+import RPi.GPIO as GPIO
+import time
+
+butPin = 17 # Broadcom pin 17 (P1 pin 11)
+# Pin Setup:
+GPIO.setmode(GPIO.BCM) # Broadcom pin-numbering scheme
+GPIO.setup(butPin, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Button pin set as input w/ pull-up
+# add rising edge detection on a channel, ignoring further edges for 200ms for switch bounce handling
+channel = butPin
+
+def my_callback(channel):
+    print('This is a edge event callback function!')
+    print('Edge detected on channel %s'%channel)
+    print('This is run in a different thread to your main program')
+    run_video
+
+GPIO.add_event_detect(channel, GPIO.RISING, callback=my_callback, bouncetime=200)
+
+
+# end GPIO stuff
+
 
 class UrlInput(QLineEdit):
     def __init__(self, browser):

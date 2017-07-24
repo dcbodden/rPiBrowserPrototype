@@ -31,7 +31,7 @@ class UrlInput(QLineEdit):
 
     def _return_pressed(self):
         url = QtCore.QUrl(self.text())
-        browser.load(url)
+        self.browser.load(url)
 
 
 class JavaScriptEvaluator(QLineEdit):
@@ -101,11 +101,19 @@ class Manager(QNetworkAccessManager):
 
 class MyApp(QtGui.QMainWindow):
 
+    def _setBrowser(self, browser=None):
+        self._browser = browser
+
+    def _getBrowser(self):
+        return self._browser
+
+    browser = property(_getBrowser, _setBrowser)
+
     # Interact with the HTML page by calling the completeAndReturnName
     # function; print its return value to the console
-    def run_video():
+    def run_video(self):
         print ('Enetered run_vudeo')
-        frame = browser.page().mainFrame()
+        frame = self._getBrowser().page().mainFrame()
         print frame.evaluateJavaScript('playPause();')
 
 
@@ -117,8 +125,8 @@ class MyApp(QtGui.QMainWindow):
         #self.label.setText("Essai de texte")
 
         grid = QGridLayout()
-        browser = QWebView()
-        url_input = UrlInput(browser)
+        self._setBrowser(QWebView())
+        url_input = UrlInput(self.browser)
         url_input.setText("file:/home/pi/rPiBrowserPrototype/testHtml5.html")
         requests_table = RequestsTable()
         loadButton = QPushButton()
@@ -132,14 +140,14 @@ class MyApp(QtGui.QMainWindow):
         manager = Manager(requests_table)
         page = QWebPage()
         page.setNetworkAccessManager(manager)
-        browser.setPage(page)
+        self.browser.setPage(page)
 
         js_eval = JavaScriptEvaluator(page)
         action_box = ActionInputBox(page)
 
         grid.addWidget(url_input, 1, 0)
         grid.addWidget(action_box, 2, 0)
-        grid.addWidget(browser, 3, 0)
+        grid.addWidget(self.browser, 3, 0)
         grid.addWidget(requests_table, 4, 0)
         grid.addWidget(js_eval, 5, 0)
         grid.addWidget(loadButton, 6,0)
@@ -147,7 +155,7 @@ class MyApp(QtGui.QMainWindow):
 
         main_frame = QWidget()
         main_frame.setLayout(grid)
-        self.setCentralWidget(self.main_frame)
+        self.setCentralWidget(main_frame)
         
     def closeEvent(self, event):
         print("event")
@@ -162,6 +170,7 @@ class MyApp(QtGui.QMainWindow):
             event.ignore()
 
     def my_Start(self, channel): #Interrupt 18
+        self.run_video()
         print "start"
 
  

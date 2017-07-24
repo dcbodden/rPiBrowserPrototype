@@ -147,8 +147,7 @@ class MyApp(QtGui.QMainWindow):
 
         main_frame = QWidget()
         main_frame.setLayout(grid)
-        main_frame.show()
-        
+        self.setCentralWidget(self.main_frame)
         
     def closeEvent(self, event):
         print("event")

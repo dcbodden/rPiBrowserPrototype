@@ -99,6 +99,7 @@ class Manager(QNetworkAccessManager):
 # Interact with the HTML page by calling the completeAndReturnName
 # function; print its return value to the console
 def run_video():
+    print ('Enetered run_vudeo')
     frame = browser.page().mainFrame()
     print frame.evaluateJavaScript('playPause();')
  
@@ -106,7 +107,7 @@ def my_callback(channel):
     print('This is a edge event callback function!')
     print('Edge detected on channel %s'%channel)
     print('This is run in a different thread to your main program')
-    run_video
+    run_video()
     
 if __name__ == "__main__":
     app = QApplication(sys.argv)
@@ -114,7 +115,7 @@ if __name__ == "__main__":
     grid = QGridLayout()
     browser = QWebView()
     url_input = UrlInput(browser)
-    url_input.setText("file:/home/dbodden/development/testHtml5.html")
+    url_input.setText("file:/home/pi/rPiBrowserPrototype/testHtml5.html")
     requests_table = RequestsTable()
     loadButton = QPushButton()
     loadButton.setText("Load Video")

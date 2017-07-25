@@ -96,8 +96,20 @@ class Manager(QNetworkAccessManager):
         status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
 
 
+class TriggerUiActions(QThread):
 
+    def __init__(self, targetElement):
+        QThread.__init__(self)
+        self.targetElement = targetElement
 
+    def __del__(self):
+        self.wait()
+
+    def _executeTrigger(self, targetElement):
+        targetElement.run_video()
+
+    def run(self):
+        self._executeTrigger(targetElement)
 
 class MyApp(QtGui.QMainWindow):
 
@@ -112,9 +124,13 @@ class MyApp(QtGui.QMainWindow):
     # Interact with the HTML page by calling the completeAndReturnName
     # function; print its return value to the console
     def run_video(self):
-        print ('Enetered run_vudeo')
+        print ('Entered run_video')
         frame = self._getBrowser().page().mainFrame()
         print frame.evaluateJavaScript('playPause();')
+        
+    def runUiThreadFromGPIO(self):
+        uithread = TriggerUiActions(self)
+        uithread.start()
 
 
     def __init__(self):
@@ -170,7 +186,8 @@ class MyApp(QtGui.QMainWindow):
             event.ignore()
 
     def my_Start(self, channel): #Interrupt 18
-        self.run_video()
+        #self.run_video()
+        self.runUiThreadFromGPIO()
         print "start"
 
  

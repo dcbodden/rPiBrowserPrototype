@@ -89,31 +89,10 @@ class Manager(QNetworkAccessManager):
         content_type = headers.get("Content-Type")
         url = reply.url().toString()
         status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
-            
-class TriggerUiActions(QThread):
 
-    def __init__(self, targetElement):
-        QThread.__init__(self)
-        print "entered thread init"
-        self.targetElement = targetElement
-
-    def __del__(self):
-        print "in thread __del__"
-        self.wait()
-        print "after self.wait()"
-
-    def _executeTrigger(self, targetElement):
-        print "entered _executeTrigger"
-        targetElement.run_video()
-        print "called run_video from thread"
-
-    def run(self):
-        print "started thread run"
-        self._executeTrigger(self.targetElement)
-        print "ran _executeTrigger in thread."
 
 class MyApp(QtGui.QMainWindow):
-    
+    # create a member of the object to act as a signal
     dataReceived = QtCore.pyqtSignal(str)
 
     def _setBrowser(self, browser=None):
@@ -124,11 +103,14 @@ class MyApp(QtGui.QMainWindow):
 
     browser = property(_getBrowser, _setBrowser)
 
+    # this is the callback that runs from the GPIO thread
     def signalStyleCallback(self,data):
         data = "poopus"
         print('callback: %s [%s]' % (data, threading.current_thread().name))
         self.dataReceived.emit(data)
         
+    # this is the callback that is activated when the main
+    # GUI thread is signalled by the emit statement above.
     def receive(self, data):
         print('received: %s [%s]' % (data, threading.current_thread().name))
         self.run_video() 
@@ -142,7 +124,11 @@ class MyApp(QtGui.QMainWindow):
 
     def __init__(self):
         QtGui.QMainWindow.__init__(self)
+        # this sets up the signal receive capability and
+        # and associates the signal identifier with the
+        # method to call.
         self.dataReceived.connect(self.receive)
+        
         grid = QGridLayout()
         self._setBrowser(QWebView())
         url_input = UrlInput(self.browser)
@@ -193,10 +179,16 @@ if __name__ == "__main__":
     GPIO.cleanup()       # clean up GPIO on start
     app = QtGui.QApplication(sys.argv)
     window = MyApp()
+    
+    # set numbring to the BCM scheme instead of physical pins
     GPIO.setmode(GPIO.BCM)
-
+    # set the initial states for input and voltage
     GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    # detect up and down edges on the pin with a bounce
+    # window to avoid double triggers. Associate the
+    # callback the GPIO thread runs.
     GPIO.add_event_detect(17, GPIO.BOTH, callback=window.signalStyleCallback, bouncetime=100)
+    # start the GUI
     window.show()
     sys.exit(app.exec_())
-    print "houla2"
+    print "exit"

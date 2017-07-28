@@ -1,26 +1,21 @@
+import RPi.GPIO as GPIO
+import datetime
 import sys
+import threading
 
-from PyQt4.QtGui import QApplication, QTableWidget, QTableWidgetItem
-from PyQt4 import QtCore 
+
+from PyQt4.QtGui import QTableWidget, QTableWidgetItem
 from PyQt4.QtWebKit import QWebView, QWebPage
 from PyQt4.QtGui import QGridLayout, QLineEdit, QWidget, QHeaderView
 from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from PyQt4.Qt import QPushButton
+from PyQt4.Qt import QThread
+from PyQt4 import QtCore, QtGui
 
-# GPIO stuff
-import RPi.GPIO as GPIO
-import time
-
-butPin = 17 # Broadcom pin 17 (P1 pin 11)
-# Pin Setup:
-GPIO.setmode(GPIO.BCM) # Broadcom pin-numbering scheme
-GPIO.setup(butPin, GPIO.IN, pull_up_down=GPIO.PUD_UP) # Button pin set as input w/ pull-up
-# add rising edge detection on a channel, ignoring further edges for 200ms for switch bounce handling
-channel = butPin
-
-
-
-# end GPIO stuff
+Tmp = datetime.datetime(2000,12,14) 
+Start = Tmp.today()
+print str(Start)
+print "hello"
 
 
 class UrlInput(QLineEdit):
@@ -31,7 +26,7 @@ class UrlInput(QLineEdit):
 
     def _return_pressed(self):
         url = QtCore.QUrl(self.text())
-        browser.load(url)
+        self.browser.load(url)
 
 
 class JavaScriptEvaluator(QLineEdit):
@@ -61,7 +56,6 @@ class ActionInputBox(QLineEdit):
             self.page.triggerAction(QWebPage.Stop)
         elif action_string == "r":
             self.page.triggerAction(QWebPage.Reload)
-
 
 class RequestsTable(QTableWidget):
     header = ["url", "status", "content-type"]
@@ -95,60 +89,114 @@ class Manager(QNetworkAccessManager):
         content_type = headers.get("Content-Type")
         url = reply.url().toString()
         status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+            
+class TriggerUiActions(QThread):
 
-# Interact with the HTML page by calling the completeAndReturnName
-# function; print its return value to the console
-def run_video():
-    print ('Enetered run_vudeo')
-    frame = browser.page().mainFrame()
-    print frame.evaluateJavaScript('playPause();')
+    def __init__(self, targetElement):
+        QThread.__init__(self)
+        print "entered thread init"
+        self.targetElement = targetElement
+
+    def __del__(self):
+        print "in thread __del__"
+        self.wait()
+        print "after self.wait()"
+
+    def _executeTrigger(self, targetElement):
+        print "entered _executeTrigger"
+        targetElement.run_video()
+        print "called run_video from thread"
+
+    def run(self):
+        print "started thread run"
+        self._executeTrigger(self.targetElement)
+        print "ran _executeTrigger in thread."
+
+class MyApp(QtGui.QMainWindow):
+    
+    dataReceived = QtCore.pyqtSignal(str)
+
+    def _setBrowser(self, browser=None):
+        self._browser = browser
+
+    def _getBrowser(self):
+        return self._browser
+
+    browser = property(_getBrowser, _setBrowser)
+
+    def signalStyleCallback(self,data):
+        data = "poopus"
+        print('callback: %s [%s]' % (data, threading.current_thread().name))
+        self.dataReceived.emit(data)
+        
+    def receive(self, data):
+        print('received: %s [%s]' % (data, threading.current_thread().name))
+        self.run_video() 
+    
+    # Interact with the HTML page by calling the completeAndReturnName
+    # function; print its return value to the console
+    def run_video(self):
+        print ('Entered run_video')
+        frame = self._getBrowser().page().mainFrame()
+        print frame.evaluateJavaScript('playPause();')
+
+    def __init__(self):
+        QtGui.QMainWindow.__init__(self)
+        self.dataReceived.connect(self.receive)
+        grid = QGridLayout()
+        self._setBrowser(QWebView())
+        url_input = UrlInput(self.browser)
+        url_input.setText("file:/home/pi/rPiBrowserPrototype/testHtml5.html")
+        requests_table = RequestsTable()
+        loadButton = QPushButton()
+        loadButton.setText("Load Video")
+        loadButton.clicked.connect(url_input._return_pressed)
+
+        playButton = QPushButton()
+        playButton.setText("Play Video")
+        playButton.clicked.connect(self.run_video)
+
+        manager = Manager(requests_table)
+        page = QWebPage()
+        page.setNetworkAccessManager(manager)
+        self.browser.setPage(page)
+
+        js_eval = JavaScriptEvaluator(page)
+        action_box = ActionInputBox(page)
+
+        grid.addWidget(url_input, 1, 0)
+        grid.addWidget(action_box, 2, 0)
+        grid.addWidget(self.browser, 3, 0)
+        grid.addWidget(requests_table, 4, 0)
+        grid.addWidget(js_eval, 5, 0)
+        grid.addWidget(loadButton, 6,0)
+        grid.addWidget(playButton, 6,1)
+
+        main_frame = QWidget()
+        main_frame.setLayout(grid)
+        self.setCentralWidget(main_frame)
+        
+    def closeEvent(self, event):
+        print("event")
+        reply = QtGui.QMessageBox.question(self, 'Message',
+            "Want to quit?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+
+        if reply == QtGui.QMessageBox.Yes:
+            GPIO.cleanup()       # clean up GPIO on CTRL+C exit
+            GPIO.cleanup()           # clean up GPIO on normal exit
+            event.accept()
+        else:
+            event.ignore()
+
  
-def my_callback(channel):
-    print('This is a edge event callback function!')
-    print('Edge detected on channel %s'%channel)
-    print('This is run in a different thread to your main program')
-    run_video()
-    
 if __name__ == "__main__":
-    app = QApplication(sys.argv)
+    GPIO.cleanup()       # clean up GPIO on start
+    app = QtGui.QApplication(sys.argv)
+    window = MyApp()
+    GPIO.setmode(GPIO.BCM)
 
-    grid = QGridLayout()
-    browser = QWebView()
-    url_input = UrlInput(browser)
-    url_input.setText("file:/home/pi/rPiBrowserPrototype/testHtml5.html")
-    requests_table = RequestsTable()
-    loadButton = QPushButton()
-    loadButton.setText("Load Video")
-    loadButton.clicked.connect(url_input._return_pressed)
-    
-    playButton = QPushButton()
-    playButton.setText("Play Video")
-    playButton.clicked.connect(run_video)
-
-    manager = Manager(requests_table)
-    page = QWebPage()
-    page.setNetworkAccessManager(manager)
-    browser.setPage(page)
-
-    js_eval = JavaScriptEvaluator(page)
-    action_box = ActionInputBox(page)
-
-    grid.addWidget(url_input, 1, 0)
-    grid.addWidget(action_box, 2, 0)
-    grid.addWidget(browser, 3, 0)
-    grid.addWidget(requests_table, 4, 0)
-    grid.addWidget(js_eval, 5, 0)
-    grid.addWidget(loadButton, 6,0)
-    grid.addWidget(playButton, 6,1)
-    
-
-
-    GPIO.add_event_detect(channel, GPIO.RISING, callback=my_callback, bouncetime=200)
-
-
-    main_frame = QWidget()
-    main_frame.setLayout(grid)
-    main_frame.show()
-
+    GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+    GPIO.add_event_detect(17, GPIO.BOTH, callback=window.signalStyleCallback, bouncetime=100)
+    window.show()
     sys.exit(app.exec_())
-
+    print "houla2"

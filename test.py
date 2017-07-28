@@ -138,7 +138,7 @@ class MyApp(QtGui.QMainWindow):
         
     def receive(self, data):
         print('received: %s [%s]' % (data, threading.current_thread().name))
-        run_video() 
+        self.run_video() 
     
     # Interact with the HTML page by calling the completeAndReturnName
     # function; print its return value to the console

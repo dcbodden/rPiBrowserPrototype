@@ -13,6 +13,7 @@ from PyQt4.QtWebKit import QWebView, QWebPage
 from PyQt4.QtGui import QGridLayout, QLineEdit, QWidget, QHeaderView
 from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from PyQt4.Qt import QPushButton
+from PyQt4.Qt import QThread
 
 
 from PyQt4 import QtCore, QtGui, uic
@@ -100,16 +101,23 @@ class TriggerUiActions(QThread):
 
     def __init__(self, targetElement):
         QThread.__init__(self)
+        print "entered thread init"
         self.targetElement = targetElement
 
     def __del__(self):
+        print "in thread __del__"
         self.wait()
+        print "after self.wait()"
 
     def _executeTrigger(self, targetElement):
+        print "entered _executeTrigger"
         targetElement.run_video()
+        print "called run_video from thread"
 
     def run(self):
-        self._executeTrigger(targetElement)
+        print "started thread run"
+        self._executeTrigger(self.targetElement)
+        print "ran _executeTrigger in thread."
 
 class MyApp(QtGui.QMainWindow):
 
@@ -129,8 +137,13 @@ class MyApp(QtGui.QMainWindow):
         print frame.evaluateJavaScript('playPause();')
         
     def runUiThreadFromGPIO(self):
+        print "entered runUiThreadFromGPIO"
         uithread = TriggerUiActions(self)
+        print "created thread"
         uithread.start()
+        print "started thread"
+        uithread.wait()
+        print "waited for thread completion."
 
 
     def __init__(self):
@@ -187,8 +200,9 @@ class MyApp(QtGui.QMainWindow):
 
     def my_Start(self, channel): #Interrupt 18
         #self.run_video()
+        print "Entered my_start"
         self.runUiThreadFromGPIO()
-        print "start"
+        print "after calling runUiThreadFromGPIO"
 
  
 if __name__ == "__main__":

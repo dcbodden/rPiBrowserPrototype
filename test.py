@@ -17,7 +17,7 @@ from PyQt4.Qt import QThread
 
 
 from PyQt4 import QtCore, QtGui, uic
-from browser import run_video
+#from browser import run_video
 
 Tmp = datetime.datetime(2000,12,14) 
 Start = Tmp.today()
@@ -131,7 +131,8 @@ class MyApp(QtGui.QMainWindow):
 
     browser = property(_getBrowser, _setBrowser)
 
-    def signalStyleCallback(self, data):
+    def signalStyleCallback(self,data):
+        data = "poopus"
         print('callback: %s [%s]' % (data, threading.current_thread().name))
         self.dataReceived.emit(data)
         
@@ -216,6 +217,7 @@ class MyApp(QtGui.QMainWindow):
 
  
 if __name__ == "__main__":
+    GPIO.cleanup()       # clean up GPIO on CTRL+C exit
     app = QtGui.QApplication(sys.argv)
     window = MyApp()
     GPIO.setmode(GPIO.BCM)
@@ -223,7 +225,7 @@ if __name__ == "__main__":
     GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     #GPIO.setup(24, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
     #GPIO.add_event_detect(17, GPIO.BOTH, callback=window.my_Start, bouncetime=100)
-    GPIO.add_event_detect(17, GPIO.BOTH, callback=window.signalStyleCallback("X"), bouncetime=100)
+    GPIO.add_event_detect(17, GPIO.BOTH, callback=window.signalStyleCallback, bouncetime=100)
     
     #GPIO.add_event_detect(17, GPIO.RISING, callback=window.my_Stop, bouncetime=2000)
     window.show()

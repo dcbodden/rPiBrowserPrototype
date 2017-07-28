@@ -162,7 +162,7 @@ class MyApp(QtGui.QMainWindow):
         #self.setupUi(self)
         #self.lcdNumber.display(10.1)
         #self.label.setText("Essai de texte")
-
+        self.dataReceived.connect(self.receive)
         grid = QGridLayout()
         self._setBrowser(QWebView())
         url_input = UrlInput(self.browser)

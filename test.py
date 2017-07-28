@@ -4,7 +4,7 @@ import os
 import random
 import datetime
 import sys
-from threading import Thread
+import threading
 
 
 from PyQt4.QtGui import QApplication, QTableWidget, QTableWidgetItem
@@ -17,6 +17,7 @@ from PyQt4.Qt import QThread
 
 
 from PyQt4 import QtCore, QtGui, uic
+from browser import run_video
 
 Tmp = datetime.datetime(2000,12,14) 
 Start = Tmp.today()
@@ -95,8 +96,7 @@ class Manager(QNetworkAccessManager):
         content_type = headers.get("Content-Type")
         url = reply.url().toString()
         status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
-
-
+            
 class TriggerUiActions(QThread):
 
     def __init__(self, targetElement):
@@ -120,6 +120,8 @@ class TriggerUiActions(QThread):
         print "ran _executeTrigger in thread."
 
 class MyApp(QtGui.QMainWindow):
+    
+    dataReceived = QtCore.pyqtSignal(str)
 
     def _setBrowser(self, browser=None):
         self._browser = browser
@@ -129,6 +131,14 @@ class MyApp(QtGui.QMainWindow):
 
     browser = property(_getBrowser, _setBrowser)
 
+    def signalStyleCallback(self, data):
+        print('callback: %s [%s]' % (data, threading.current_thread().name))
+        self.dataReceived.emit(data)
+        
+    def receive(self, data):
+        print('received: %s [%s]' % (data, threading.current_thread().name))
+        run_video() 
+    
     # Interact with the HTML page by calling the completeAndReturnName
     # function; print its return value to the console
     def run_video(self):
@@ -212,7 +222,9 @@ if __name__ == "__main__":
 
     GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_UP)
     #GPIO.setup(24, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.add_event_detect(17, GPIO.BOTH, callback=window.my_Start, bouncetime=100)
+    #GPIO.add_event_detect(17, GPIO.BOTH, callback=window.my_Start, bouncetime=100)
+    GPIO.add_event_detect(17, GPIO.BOTH, callback=window.signalStyleCallback("X"), bouncetime=100)
+    
     #GPIO.add_event_detect(17, GPIO.RISING, callback=window.my_Stop, bouncetime=2000)
     window.show()
     sys.exit(app.exec_())

@@ -1,4 +1,4 @@
-import RPi.GPIO as GPIO
+
 import datetime
 import sys
 import threading
@@ -11,6 +11,13 @@ from PyQt4.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from PyQt4.Qt import QPushButton
 from PyQt4.Qt import QThread
 from PyQt4 import QtCore, QtGui
+
+GPIO_AVAILABLE=0
+try:
+    import RPi.GPIO as GPIO
+    GPIO_AVAILABLE = 1
+except ImportError:
+    print "No GPIO available, running in soft GUI mode."
 
 Tmp = datetime.datetime(2000,12,14) 
 Start = Tmp.today()
@@ -176,18 +183,18 @@ class MyApp(QtGui.QMainWindow):
 
  
 if __name__ == "__main__":
-    GPIO.cleanup()       # clean up GPIO on start
     app = QtGui.QApplication(sys.argv)
     window = MyApp()
-    
-    # set numbring to the BCM scheme instead of physical pins
-    GPIO.setmode(GPIO.BCM)
-    # set the initial states for input and voltage
-    GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_UP)
-    # detect up and down edges on the pin with a bounce
-    # window to avoid double triggers. Associate the
-    # callback the GPIO thread runs.
-    GPIO.add_event_detect(17, GPIO.BOTH, callback=window.signalStyleCallback, bouncetime=100)
+    if (GPIO_AVAILABLE == 1):
+        GPIO.cleanup()       # clean up GPIO on start
+        # set numbring to the BCM scheme instead of physical pins
+        GPIO.setmode(GPIO.BCM)
+        # set the initial states for input and voltage
+        GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_UP)
+        # detect up and down edges on the pin with a bounce
+        # window to avoid double triggers. Associate the
+        # callback the GPIO thread runs.
+        GPIO.add_event_detect(17, GPIO.BOTH, callback=window.signalStyleCallback, bouncetime=100)
     # start the GUI
     window.show()
     sys.exit(app.exec_())

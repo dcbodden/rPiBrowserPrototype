@@ -1,0 +1,51 @@
+<!DOCTYPE html> 
+<html> 
+
+<body> 
+
+<div style="text-align:center"> 
+  <button onclick="navLeft()">Previous</button> 
+  <button onclick="playPause()">Play/Pause</button> 
+  <button onclick="navRight()">Next</button> 
+  <br><br>
+  <video id="video1" width="420">
+    <source src="small1.mp4" type="video/mp4">
+    Your browser does not support HTML5 video.
+  </video>
+</div> 
+
+<script> 
+var myVideo = document.getElementById("video1"); 
+
+function playPause() { 
+    if (myVideo.paused) 
+        myVideo.play(); 
+    else 
+        myVideo.pause(); 
+} 
+
+function navLeft() 
+{
+    window.location.href = "content2.html";
+}
+
+function navRight() 
+{
+    window.location.href = "content1.html";
+}
+</script> 
+
+<script id="toddleConfig">
+    {
+        "actions" :
+        [
+            { "logicalButton":"button1", "GPIO":"17", "invokeScript":"navLeft" },
+            { "logicalButton":"button2", "GPIO":"27", "invokeScript":"playPause" },
+            { "logicalButton":"button3", "GPIO":"22", "invokeScript":"navRight" }
+        ]
+    }
+</script>
+3
+</body> 
+</html>
+

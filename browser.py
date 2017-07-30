@@ -126,7 +126,6 @@ class MyApp(QtGui.QMainWindow):
 
     # this is the callback that runs from the GPIO thread
     def signalStyleCallback(self,data):
-        data = "poopus"
         print('callback: %s [%s]' % (data, threading.current_thread().name))
         self.dataReceived.emit(data)
         

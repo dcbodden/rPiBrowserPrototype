@@ -3,6 +3,7 @@ import datetime
 import sys
 import threading
 import os
+import json
 
 from PyQt4.QtGui import QTableWidget, QTableWidgetItem
 from PyQt4.QtWebKit import QWebView, QWebPage
@@ -97,6 +98,19 @@ class Manager(QNetworkAccessManager):
         url = reply.url().toString()
         status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
 
+class toddleCfgParser():
+    
+    _myJsonString = ""
+    
+    def __init__(self, jsonString):
+        self._myJsonString = jsonString
+        
+    def parseToddleCfg(self):
+        toddleCfg = json.loads(self._myJsonString)
+        #print toddleCfg
+        #print toddleCfg['actions']
+        for mappedFunction in  toddleCfg['actions']:
+            print "GPIO: %s, logicalButton: %s, js function: %s" % (mappedFunction['GPIO'], mappedFunction['logicalButton'], mappedFunction['invokeScript'])
 
 class MyApp(QtGui.QMainWindow):
     # create a member of the object to act as a signal
@@ -128,6 +142,17 @@ class MyApp(QtGui.QMainWindow):
         print ('Entered run_video')
         frame = self._getBrowser().page().mainFrame()
         print frame.evaluateJavaScript('playPause();')
+    
+    def pageLoadComplete(self):
+        self.parseToddleJson()
+    
+    def parseToddleJson(self):
+        print "page load complete"
+        elements = self.browser.page().mainFrame().findAllElements("#toddleConfig")
+        #for index in range(elements.count()):
+        #    print(elements.at(index).toPlainText())
+        parser = toddleCfgParser(str(elements.at(0).toPlainText()))
+        parser.parseToddleCfg()
         
     def initializeGui(self):
         grid = QGridLayout()
@@ -135,18 +160,24 @@ class MyApp(QtGui.QMainWindow):
         url_input = UrlInput(self.browser)
         url_input.setText("file:/home/pi/rPiBrowserPrototype/testHtml5.html")
         requests_table = RequestsTable()
-        loadButton = QPushButton()
-        loadButton.setText("Load Video")
-        loadButton.clicked.connect(url_input._return_pressed)
+        #loadButton = QPushButton()
+        #loadButton.setText("Load Video")
+        #loadButton.clicked.connect(url_input._return_pressed)
 
         playButton = QPushButton()
         playButton.setText("Play Video")
         playButton.clicked.connect(self.run_video)
 
+        # this stuff shouldn't be here - need to
+        # move this to a functionally cohesive place 
+        # in the code
         manager = Manager(requests_table)
         page = QWebPage()
         page.setNetworkAccessManager(manager)
+        
+        
         self.browser.setPage(page)
+        self.browser.loadFinished.connect(self.pageLoadComplete)
 
         js_eval = JavaScriptEvaluator(page)
         action_box = ActionInputBox(page)

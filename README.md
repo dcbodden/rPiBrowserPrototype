@@ -15,13 +15,13 @@ The example assumes there's a video "small.mp4" available in an HTML5 video tag.
 
 # GPIO button list
 Assuming the GPIO buttons we will use will be limited to an initial number of 8, by convention, I recommend the following standard approach to button identification:
-0 - 17
-1 - 27
-2 - 22
-3 - 23
-4 - 24
-5 - 25
-6 - 16
-7 - 26
+0. 17
+1. 27
+2. 22
+3. 23
+4. 24
+5. 25
+6. 16
+7. 26
 
 I've skipped buttons that might be used for other purposes besides standard GPIO, but since this is just a convention, it can be ignored.

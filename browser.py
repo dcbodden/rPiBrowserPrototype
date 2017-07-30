@@ -2,7 +2,7 @@
 import datetime
 import sys
 import threading
-
+import os
 
 from PyQt4.QtGui import QTableWidget, QTableWidgetItem
 from PyQt4.QtWebKit import QWebView, QWebPage
@@ -128,14 +128,8 @@ class MyApp(QtGui.QMainWindow):
         print ('Entered run_video')
         frame = self._getBrowser().page().mainFrame()
         print frame.evaluateJavaScript('playPause();')
-
-    def __init__(self):
-        QtGui.QMainWindow.__init__(self)
-        # this sets up the signal receive capability and
-        # and associates the signal identifier with the
-        # method to call.
-        self.dataReceived.connect(self.receive)
         
+    def initializeGui(self):
         grid = QGridLayout()
         self._setBrowser(QWebView())
         url_input = UrlInput(self.browser)
@@ -157,17 +151,28 @@ class MyApp(QtGui.QMainWindow):
         js_eval = JavaScriptEvaluator(page)
         action_box = ActionInputBox(page)
 
-        grid.addWidget(url_input, 1, 0)
+        #grid.addWidget(url_input, 1, 0)
         grid.addWidget(action_box, 2, 0)
         grid.addWidget(self.browser, 3, 0)
         grid.addWidget(requests_table, 4, 0)
         grid.addWidget(js_eval, 5, 0)
-        grid.addWidget(loadButton, 6,0)
-        grid.addWidget(playButton, 6,1)
+        #grid.addWidget(loadButton, 6,0)
+        grid.addWidget(playButton, 6,0)
 
         main_frame = QWidget()
         main_frame.setLayout(grid)
+        return main_frame
+
+    def __init__(self):
+        QtGui.QMainWindow.__init__(self)
+        # this sets up the signal receive capability and
+        # and associates the signal identifier with the
+        # method to call.
+        self.dataReceived.connect(self.receive)
+        
+        main_frame = self.initializeGui()
         self.setCentralWidget(main_frame)
+        
         
     def closeEvent(self, event):
         print("event")
@@ -175,8 +180,8 @@ class MyApp(QtGui.QMainWindow):
             "Want to quit?", QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
 
         if reply == QtGui.QMessageBox.Yes:
-            GPIO.cleanup()       # clean up GPIO on CTRL+C exit
-            GPIO.cleanup()           # clean up GPIO on normal exit
+            if GPIO_AVAILABLE == 1:
+                GPIO.cleanup()       # clean up GPIO on CTRL+C exit
             event.accept()
         else:
             event.ignore()
@@ -187,7 +192,7 @@ if __name__ == "__main__":
     window = MyApp()
     if (GPIO_AVAILABLE == 1):
         GPIO.cleanup()       # clean up GPIO on start
-        # set numbring to the BCM scheme instead of physical pins
+        # set numbering to the BCM scheme instead of physical pins
         GPIO.setmode(GPIO.BCM)
         # set the initial states for input and voltage
         GPIO.setup(17, GPIO.IN, pull_up_down=GPIO.PUD_UP)
@@ -197,5 +202,9 @@ if __name__ == "__main__":
         GPIO.add_event_detect(17, GPIO.BOTH, callback=window.signalStyleCallback, bouncetime=100)
     # start the GUI
     window.show()
+    url = os.environ.get('TODDLE_CONTENT')
+    #print os.environ
+    #print url
+    window.browser.load(QtCore.QUrl(url))
     sys.exit(app.exec_())
     print "exit"

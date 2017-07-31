@@ -149,13 +149,18 @@ class MyApp(QtGui.QMainWindow):
         self.parseToddleJson()
         
     def setupMappings(self):
-        GPIO.cleanup()
+        if ( GPIO_AVAILABLE == 1):
+            GPIO.cleanup()
+        self.logicalActionMap.clear()
         for mappedFunction in self._currentCfg['actions']:
+            print "Mapping %s to %s and logicalButton %s" % (mappedFunction['GPIO'], mappedFunction['invokeScript'], mappedFunction['logicalButton'])
             # associate a channel with a javascript function to invoke in the callback
             self.logicalActionMap[mappedFunction['GPIO']] = mappedFunction['invokeScript']
             # need to also figure out how to associate the soft buttons here
+            self.logicalActionMap[mappedFunction['logicalButton']] = mappedFunction['invokeScript']
             # setup the basic callback channel for the GPIO thread
-            GPIO.add_event_detect(mappedFunction['GPIO'], GPIO.BOTH, callback=window.signalStyleCallback, bouncetime=100)
+            if (GPIO_AVAILABLE == 1):
+                GPIO.add_event_detect(mappedFunction['GPIO'], GPIO.BOTH, callback=window.signalStyleCallback, bouncetime=100)
     
     def parseToddleJson(self):
         print "page load complete"
@@ -171,6 +176,14 @@ class MyApp(QtGui.QMainWindow):
         
     def initializeGui(self):
         grid = QGridLayout()
+        grid.setColumnStretch (0, 1)
+        grid.setColumnStretch (1, 1)
+        grid.setColumnStretch (2, 1)
+        grid.setColumnStretch (3, 1)
+        grid.setColumnStretch (4, 1)
+        grid.setColumnStretch (5, 1)
+        grid.setColumnStretch (6, 1)
+        grid.setColumnStretch (7, 1)
         self._setBrowser(QWebView())
         url_input = UrlInput(self.browser)
         url_input.setText("file:/home/pi/rPiBrowserPrototype/testHtml5.html")
@@ -198,12 +211,39 @@ class MyApp(QtGui.QMainWindow):
         action_box = ActionInputBox(page)
 
         #grid.addWidget(url_input, 1, 0)
-        grid.addWidget(action_box, 2, 0)
-        grid.addWidget(self.browser, 3, 0)
-        grid.addWidget(requests_table, 4, 0)
-        grid.addWidget(js_eval, 5, 0)
+        grid.addWidget(action_box, 2, 0, 1, 8)
+        grid.addWidget(self.browser, 3, 0, 1, 8)
+        grid.addWidget(requests_table, 4, 0,1 , 8)
+        grid.addWidget(js_eval, 5, 0, 1, 8)
         #grid.addWidget(loadButton, 6,0)
-        grid.addWidget(playButton, 6,0)
+        grid.addWidget(playButton, 6,0, 1, 8)
+        
+        #add the logical buttons (these won't be used on the 
+        # rPi device, they're just for development)
+        btn0 = QPushButton("Button0")
+        btn1 = QPushButton("Button1")
+        btn2 = QPushButton("Button2")
+        btn3 = QPushButton("Button3")
+        btn4 = QPushButton("Button4")
+        btn5 = QPushButton("Button5")
+        btn6 = QPushButton("Button6")
+        btn7 = QPushButton("Button7")
+        self.logicalActionMap['button0'] = btn0
+        self.logicalActionMap['button1'] = btn1
+        self.logicalActionMap['button2'] = btn2
+        self.logicalActionMap['button3'] = btn3
+        self.logicalActionMap['button4'] = btn4
+        self.logicalActionMap['button5'] = btn5
+        self.logicalActionMap['button6'] = btn6
+        self.logicalActionMap['button7'] = btn7
+        grid.addWidget(btn0, 7, 0, 1, 1)
+        grid.addWidget(btn1, 7, 1, 1, 1)
+        grid.addWidget(btn2, 7, 2, 1, 1)
+        grid.addWidget(btn3, 7, 3, 1, 1)
+        grid.addWidget(btn4, 7, 4, 1, 1)
+        grid.addWidget(btn5, 7, 5, 1, 1)
+        grid.addWidget(btn6, 7, 6, 1, 1)
+        grid.addWidget(btn7, 7, 7, 1, 1)
 
         main_frame = QWidget()
         main_frame.setLayout(grid)

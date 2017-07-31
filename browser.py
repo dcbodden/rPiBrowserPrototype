@@ -111,6 +111,7 @@ class toddleCfgParser():
         #print toddleCfg['actions']
         for mappedFunction in  toddleCfg['actions']:
             print "GPIO: %s, logicalButton: %s, js function: %s" % (mappedFunction['GPIO'], mappedFunction['logicalButton'], mappedFunction['invokeScript'])
+        return toddleCfg
 
 class MyApp(QtGui.QMainWindow):
     # create a member of the object to act as a signal
@@ -123,6 +124,8 @@ class MyApp(QtGui.QMainWindow):
         return self._browser
 
     browser = property(_getBrowser, _setBrowser)
+    
+    logicalActionMap = {}
 
     # this is the callback that runs from the GPIO thread
     def signalStyleCallback(self,data):
@@ -144,6 +147,15 @@ class MyApp(QtGui.QMainWindow):
     
     def pageLoadComplete(self):
         self.parseToddleJson()
+        
+    def setupMappings(self):
+        GPIO.cleanup()
+        for mappedFunction in self._currentCfg['actions']:
+            # associate a channel with a javascript function to invoke in the callback
+            self.logicalActionMap[mappedFunction['GPIO']] = mappedFunction['invokeScript']
+            # need to also figure out how to associate the soft buttons here
+            # setup the basic callback channel for the GPIO thread
+            GPIO.add_event_detect(mappedFunction['GPIO'], GPIO.BOTH, callback=window.signalStyleCallback, bouncetime=100)
     
     def parseToddleJson(self):
         print "page load complete"
@@ -151,7 +163,11 @@ class MyApp(QtGui.QMainWindow):
         #for index in range(elements.count()):
         #    print(elements.at(index).toPlainText())
         parser = toddleCfgParser(str(elements.at(0).toPlainText()))
-        parser.parseToddleCfg()
+        self._currentCfg = parser.parseToddleCfg()
+        self.setupMappings()
+    
+    def setupLogicalButtonActions(self, toddleCfg):
+        print "boof"
         
     def initializeGui(self):
         grid = QGridLayout()
